@@ -1,0 +1,4 @@
+-keep class com.painite.keyboard.** { *; }
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception

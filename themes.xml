@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Painite" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#0D0D1A</item>
+        <item name="android:colorBackground">#0D0D1A</item>
+        <item name="android:statusBarColor">#0D0D1A</item>
+        <item name="android:navigationBarColor">#0D0D1A</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="Theme.Painite.Setup" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#0D0D1A</item>
+        <item name="android:navigationBarColor">#0D0D1A</item>
+        <item name="android:windowBackground">#0D0D1A</item>
+    </style>
+</resources>

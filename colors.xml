@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="painite_bg">#0D0D1A</color>
+    <color name="painite_key">#1A1A2E</color>
+    <color name="painite_neon_blue">#00D4FF</color>
+    <color name="painite_neon_purple">#B24BF3</color>
+    <color name="painite_neon_pink">#FF2D78</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+    <!-- Required by adaptive icon XML -->
+    <color name="ic_launcher_background">#060B1A</color>
+</resources>
