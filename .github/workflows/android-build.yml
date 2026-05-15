@@ -1,0 +1,160 @@
+name: Build Painite APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required Android packages
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Reconstruct Android project structure from flat files
+        run: |
+          set -e
+
+          BASE="com/painite/keyboard"
+          SRC="app/src/main/java/$BASE"
+          RES="app/src/main/res"
+
+          mkdir -p gradle/wrapper
+          mkdir -p $SRC/ime
+          mkdir -p $SRC/data
+          mkdir -p $SRC/ui/keyboard/components
+          mkdir -p $SRC/ui/clipboard
+          mkdir -p $SRC/ui/settings
+          mkdir -p $SRC/ui/setup
+          mkdir -p $SRC/ui/theme
+          mkdir -p $SRC/ui/translate
+          mkdir -p $SRC/utils
+          mkdir -p $RES/values
+          mkdir -p $RES/xml
+          mkdir -p $RES/drawable
+          mkdir -p $RES/mipmap-mdpi
+          mkdir -p $RES/mipmap-hdpi
+          mkdir -p $RES/mipmap-xhdpi
+          mkdir -p $RES/mipmap-xxhdpi
+          mkdir -p $RES/mipmap-xxxhdpi
+          mkdir -p $RES/mipmap-anydpi-v26
+
+          cp build.gradle                  app/build.gradle
+          cp painite-keyboard_build.gradle build.gradle
+          cp proguard-rules.pro            app/proguard-rules.pro
+          cp gradle-wrapper.properties     gradle/wrapper/gradle-wrapper.properties
+
+          GRADLE_VERSION=8.4
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp/gradle-home
+          /tmp/gradle-home/gradle-${GRADLE_VERSION}/bin/gradle wrapper \
+            --gradle-version ${GRADLE_VERSION} --distribution-type bin --no-daemon
+          chmod +x gradlew
+
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+
+          cp PainiteApp.kt          $SRC/PainiteApp.kt
+          cp PainiteIME.kt          $SRC/ime/PainiteIME.kt
+          cp AppDatabase.kt         $SRC/data/AppDatabase.kt
+          cp ClipboardDao.kt        $SRC/data/ClipboardDao.kt
+          cp ClipboardItem.kt       $SRC/data/ClipboardItem.kt
+          cp ClipboardRepository.kt $SRC/data/ClipboardRepository.kt
+          cp SettingsRepository.kt  $SRC/data/SettingsRepository.kt
+          cp KeyboardScreen.kt      $SRC/ui/keyboard/KeyboardScreen.kt
+          cp KeyboardViewModel.kt   $SRC/ui/keyboard/KeyboardViewModel.kt
+          cp BanglaKeys.kt          $SRC/ui/keyboard/components/BanglaKeys.kt
+          cp BottomRow.kt           $SRC/ui/keyboard/components/BottomRow.kt
+          cp EmojiPanel.kt          $SRC/ui/keyboard/components/EmojiPanel.kt
+          cp KeyButton.kt           $SRC/ui/keyboard/components/KeyButton.kt
+          cp LetterKeys.kt          $SRC/ui/keyboard/components/LetterKeys.kt
+          cp NumberRow.kt           $SRC/ui/keyboard/components/NumberRow.kt
+          cp RowBarSection.kt       $SRC/ui/keyboard/components/RowBarSection.kt
+          cp SymbolKeys.kt          $SRC/ui/keyboard/components/SymbolKeys.kt
+          cp ClipboardPanel.kt      $SRC/ui/clipboard/ClipboardPanel.kt
+          cp QuickSettingsPanel.kt  $SRC/ui/settings/QuickSettingsPanel.kt
+          cp SettingsActivity.kt    $SRC/ui/settings/SettingsActivity.kt
+          cp SetupActivity.kt       $SRC/ui/setup/SetupActivity.kt
+          cp KeyboardTheme.kt       $SRC/ui/theme/KeyboardTheme.kt
+          cp PremiumPIcon.kt        $SRC/ui/theme/PremiumPIcon.kt
+          cp TranslatePanel.kt      $SRC/ui/translate/TranslatePanel.kt
+          cp HapticManager.kt       $SRC/utils/HapticManager.kt
+          cp VoiceTypingManager.kt  $SRC/utils/VoiceTypingManager.kt
+
+          cp strings.xml  $RES/values/strings.xml
+          cp themes.xml   $RES/values/themes.xml
+          cp colors.xml   $RES/values/colors.xml
+          cp method.xml   $RES/xml/method.xml
+
+          cp ic_launcher_mdpi.png        $RES/mipmap-mdpi/ic_launcher.png
+          cp ic_launcher_round_mdpi.png  $RES/mipmap-mdpi/ic_launcher_round.png
+          cp ic_launcher_hdpi.png        $RES/mipmap-hdpi/ic_launcher.png
+          cp ic_launcher_round_hdpi.png  $RES/mipmap-hdpi/ic_launcher_round.png
+          cp ic_launcher_xhdpi.png       $RES/mipmap-xhdpi/ic_launcher.png
+          cp ic_launcher_round_xhdpi.png $RES/mipmap-xhdpi/ic_launcher_round.png
+          cp ic_launcher_xxhdpi.png      $RES/mipmap-xxhdpi/ic_launcher.png
+          cp ic_launcher_round_xxhdpi.png $RES/mipmap-xxhdpi/ic_launcher_round.png
+          cp ic_launcher_xxxhdpi.png     $RES/mipmap-xxxhdpi/ic_launcher.png
+          cp ic_launcher_round_xxxhdpi.png $RES/mipmap-xxxhdpi/ic_launcher_round.png
+
+          cp ic_launcher_foreground.png $RES/drawable/ic_launcher_foreground.png
+          cp ic_launcher_adaptive.xml $RES/mipmap-anydpi-v26/ic_launcher.xml
+          cp ic_launcher_adaptive.xml $RES/mipmap-anydpi-v26/ic_launcher_round.xml
+
+          cp ic_rowbar_*.xml $RES/drawable/
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Rename Release APK
+        run: |
+          mkdir -p release-apk
+          cp app/build/outputs/apk/release/app-release.apk release-apk/Painite-Release.apk
+
+      - name: Upload Painite Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Painite-Release-APK
+          path: release-apk/Painite-Release.apk
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag push)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-apk/Painite-Release.apk
+          name: Painite Release APK ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
